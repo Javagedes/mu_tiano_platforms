@@ -1,0 +1,36 @@
+# @file CreatePr.yaml
+# Azure Pipeline that executes on a new commit to Master, that creates a
+# subtree pull PR request for all repos listed.
+##
+# Copyright (c) Microsoft Corporation
+#
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+trigger:
+- main
+
+pr: none 
+
+jobs:
+  - job: Run
+    pool:
+      vmImage: Windows-Latest
+
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: ">=3.10.6"
+        architectures: x64
+    - script: pip install -r .azurepipelines/requirements.txt --upgrade
+      displayName: Install and Upgrade pip requirements
+    - script: |
+        git config --global user.email "mscoreuefi@microsoft.com"
+        git config --global user.name "uefibot"
+      displayName: Set git user information
+    - task: PythonScript@0
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: .azurepipelines/scripts/subtree_pr_gen.py
+        arguments: '-T $(Github.Token) -U $(Github.User) -P .github/ -R .azurepipelines/scripts/repo_list.yaml'
+      displayName: Generate PRs
