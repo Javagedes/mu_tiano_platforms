@@ -246,13 +246,19 @@ class PlatformBuilder(UefiBuilder, BuildSettingsManager):
 
     def GetLoggingLevel(self, loggerType):
         ''' Get the logging level for a given type
+
+        sets the logging level to DEBUG if the os environ DEBUG is true to support
+        debug mode on azure pipelines. Will utilize default logging levels otherwise.
+
         base == lowest logging level supported
         con  == Screen logging
         txt  == plain text file logging
         md   == markdown file logging
         '''
+        if loggerType == "con" and os.environ.get('DEBUG', 'FALSE') == "TRUE":
+            return logging.DEBUG
         return logging.INFO
-        return super().GetLoggingLevel(loggerType)
+
 
     def SetPlatformEnv(self):
         logging.debug("PlatformBuilder SetPlatformEnv")

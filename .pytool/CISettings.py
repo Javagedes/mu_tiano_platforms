@@ -37,6 +37,15 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
     #                        Default Support for this Ci Build                                #
     # ####################################################################################### #
 
+    def GetLoggingLevel(self, loggerType: str) -> str:
+        ''' sets the logging level to DEBUG if the os environ DEBUG is true,
+
+        This is to support debug mode on azure pipelines. Will utilize default logging
+        levels otherwise. 
+        '''
+        if loggerType == "con" and os.environ.get('DEBUG', 'FALSE') == "TRUE":
+            return logging.DEBUG
+
     def GetPackagesSupported(self):
         ''' return iterable of edk2 packages supported by this build.
         These should be edk2 workspace relative paths '''
