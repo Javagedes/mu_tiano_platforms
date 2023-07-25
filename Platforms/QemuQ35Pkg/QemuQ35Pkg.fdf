@@ -595,6 +595,22 @@ FILE FREEFORM = PCD(gZeroTouchPkgTokenSpaceGuid.PcdZeroTouchCertificateFile) {
     SECTION RAW = $(POLICY_BIN_PATH)
   }
 
+  # FILE FREEFORM = PCD(gOemPkgTokenSpaceGuid.PcdSecureBootKekBinaryFile) {
+  #   SECTION RAW = $(SECUREBOOT_BIN_DIR)/DefaultKek.bin
+  # }
+
+  # FILE FREEFORM = PCD(gOemPkgTokenSpaceGuid.PcdSecureBootDbBinaryFile) {
+  #   SECTION RAW = $(SECUREBOOT_BIN_DIR)/DefaultDb.bin
+  # }
+
+  # FILE FREEFORM = PCD(gOemPkgTokenSpaceGuid.PcdSecureBoot3PDbBinaryFile) {
+  #   SECTION RAW = $(SECUREBOOT_BIN_DIR)/Default3PDb.bin
+  # }
+
+  # FILE FREEFORM = PCD(gOemPkgTokenSpaceGuid.PcdSecureBotDbxBinaryFile) {
+  #   SECTION RAW = $(SECUREBOOT_BIN_DIR)/DefaultDbx.bin
+  # }
+
 ################################################################################
 
 [FV.FVMAIN_COMPACT]

@@ -287,6 +287,7 @@ class PlatformBuilder(UefiBuilder, BuildSettingsManager):
 
         # Enabled all of the SMM modules
         self.env.SetValue("BLD_*_SMM_ENABLED", "TRUE", "Default")
+        self.env.SetValue("BLD_*_SECUREBOOT_BIN_DIR", self.mws.join(self.ws, "SecureBootBins"), "Platform Hardcoded")
 
         return 0
     
