@@ -88,7 +88,7 @@
 
 !include MdePkg/MdeLibs.dsc.inc
 
-[LibraryClasses.common]
+[LibraryClasses]
   DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
 
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
@@ -933,7 +933,6 @@
 
   MsGraphicsPkg/MsUiTheme/Pei/MsUiThemePpi.inf
   MsGraphicsPkg/MsEarlyGraphics/Pei/MsEarlyGraphics.inf
-  MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTablePei/FirmwarePerformancePei.inf
   OemPkg/DeviceStatePei/DeviceStatePei.inf
   MfciPkg/MfciPei/MfciPei.inf
 
@@ -1024,9 +1023,6 @@
       DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
       PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
   }
-
-  # Spoofs button press to automatically boot to FrontPage.
-  OemPkg/FrontpageButtonsVolumeUp/FrontpageButtonsVolumeUp.inf
 
   # Application that presents and manages FrontPage.
   OemPkg/FrontPage/FrontPage.inf

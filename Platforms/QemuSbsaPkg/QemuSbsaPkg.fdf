@@ -295,7 +295,6 @@ READ_LOCK_STATUS   = TRUE
   # Frontpages
   #
   INF SetupDataPkg/ConfApp/ConfApp.inf
-  # INF OemPkg/FrontpageButtonsVolumeUp/FrontpageButtonsVolumeUp.inf
   INF OemPkg/FrontPage/FrontPage.inf
   INF OemPkg/BootMenu/BootMenu.inf
 

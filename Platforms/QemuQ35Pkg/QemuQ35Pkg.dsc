@@ -1223,7 +1223,6 @@ QemuQ35Pkg/Library/ResetSystemLib/StandaloneMmResetSystemLib.inf
   NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
 
   NetworkPkg/TlsDxe/TlsDxe.inf
-  NetworkPkg/TlsAuthConfigDxe/TlsAuthConfigDxe.inf
 
   NetworkPkg/DnsDxe/DnsDxe.inf
   NetworkPkg/HttpDxe/HttpDxe.inf
