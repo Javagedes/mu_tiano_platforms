@@ -1,0 +1,76 @@
+name: Publish Qemu Ext-Dep
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+env:
+  QEMU_VERSION_FILE: .github/workflows/QemuVersion.json
+
+jobs:
+  qemu-windows:
+    runs-on: windows-latest
+  
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Get current Qemu version
+      id: qemu-version
+      run: |
+        $qemuVersion = (Get-Content -Path $env:QEMU_VERSION_FILE | ConvertFrom-Json).windows
+        "QEMU_VERSION=$qemuVersion" | Out-File -FilePath "$env:GITHUB_OUTPUT" -Append
+      shell: pwsh
+    - name: Download Qemu v${{ steps.qemu-version.outputs.QEMU_VERSION }}
+      env:
+        QEMU_VERSION: ${{ steps.qemu-version.outputs.QEMU_VERSION }}
+      run: |
+        choco install qemu --version=$env:QEMU_VERSION
+    - name: Upload Qemu Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: qemu-windows
+        path: |
+          C:\Program Files\qemu\qemu-system-x86_64.exe
+          C:\Program Files\qemu\qemu-system-aarch64.exe
+        if-no-files-found: error
+  qemu-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Get current Qemu version
+      id: qemu-version
+      run: |
+        qemuVersion=$(jq -r .linux $QEMU_VERSION_FILE)
+        echo "QEMU_VERSION=$qemuVersion" >> $GITHUB_OUTPUT
+      shell: bash
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes --no-install-recommends \
+          autoconf \
+          automake \
+          autotools-dev \
+          bc \
+          build-essential \
+          dosfstools \
+          gcc \
+          libglib2.0-dev \
+          libgtk-3-dev \
+          libpixman-1-dev \
+          libsdl2-dev \
+          mtools \
+          ninja-build \
+          tar
+      
+    - name: Compile Qemu ${{ steps.qemu-version.outputs.QEMU_VERSION }}
+      env:
+        QEMU_VERSION: ${{ steps.qemu-version.outputs.QEMU_VERSION }}
+        QEMU_URL: "https://gitlab.com/qemu-project/qemu.git"
+      run: |
+        git clone $QEMU_URL --branch $QEMU_VERSION --depth 1 qemu
+        cd qemu
+        ./configure --target-list=x86_64-softmmu,aarch64-softmmu --enable-gtk
+        sudo make install -j $(nproc)    
