@@ -104,23 +104,32 @@ jobs:
         with:
           name: qemu-linux
           path: linux
+      - name: Set Release version
+        id: set-version
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "EXTDEP_VERSION=${{github.event.release.tag_name}}" >> $GITHUB_ENV
+          else
+            echo "EXTDEP_VERSION=0.0.0" >> $GITHUB_ENV
+          fi
       - name: Stage Ext-Dep
         run: |
-          mkdir -p temp
-          mv windows/ temp/Windows/
-          mv linux/ temp/Linux/
-          ls temp/Windows
-          ls temp/Linux
-          chmod a+x temp/Linux/*
+          mkdir -p qemu
+          mv windows/ qemu/Windows/
+          mv linux/ qemu/Linux/
+          ls qemu/Windows
+          ls qemu/Linux
+          chmod a+x qemu/Linux/*
       - name: Package Ext-Dep
         run: |
-          zip -r qemu-1.0.0.zip temp/*
-          tar -czf qemu-1.0.0.tar.gz temp/*
-      
+          zip -r qemu-$VERSION.zip qemu/*
+          tar -czf qemu-$VERSION.tar.gz qemu/*
+
       - name: Upload Ext-Dep
         uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
         with:
           name: qemu-extdep
           path: |
-            qemu-1.0.0.zip
-            qemu-1.0.0.tar.gz
+            qemu-$VERSION.zip
+            qemu-$VERSION.gz
