@@ -1,0 +1,26 @@
+name: publish qemu extdep
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  qemu-windows:
+    runs-on: windows-latest
+  
+    steps:
+    - name: Get current Qemu version
+      id: qemu-version
+      run: |
+        $qemuVersion = (Get-Content -Path WindowsQemuVersion.json | ConvertFrom-Json).version
+        echo "::set-output name=QEMU_VERSION::$qemuVersion"
+      shell: pwsh
+    - name: Download Qemu v${{ steps.qemu-version.outputs.QEMU_VERSION }}
+      run: |
+        mkdir artifacts
+        choco install qemu --version=${{ steps.qemu-version.outputs.QEMU_VERSION }} --installargs="'/D=artifacts"
+    - name: Upload Qemu v${{ steps.qemu-version.outputs.QEMU_VERSION }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: qemu
+        path: artifacts
