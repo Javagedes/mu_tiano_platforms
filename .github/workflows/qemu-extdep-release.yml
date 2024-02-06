@@ -14,7 +14,7 @@ jobs:
   
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Get current Qemu version
       id: qemu-version
       run: |
@@ -27,7 +27,7 @@ jobs:
       run: |
         choco install qemu --version=$env:QEMU_VERSION
     - name: Upload Qemu Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: qemu-windows
         path: |
@@ -39,7 +39,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Get current Qemu version
       id: qemu-version
       run: |
@@ -69,8 +69,58 @@ jobs:
       env:
         QEMU_VERSION: ${{ steps.qemu-version.outputs.QEMU_VERSION }}
         QEMU_URL: "https://gitlab.com/qemu-project/qemu.git"
+        DEBIAN_FRONTEND: "noninteractive"
       run: |
         git clone $QEMU_URL --branch $QEMU_VERSION --depth 1 qemu
         cd qemu
-        ./configure --target-list=x86_64-softmmu,aarch64-softmmu --enable-gtk
-        sudo make install -j $(nproc)    
+        mkdir bin
+        cd bin
+        ./../configure --target-list=x86_64-softmmu,aarch64-softmmu --enable-gtk
+        sudo make -j $(nproc)  
+    - name: Upload Qemu Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: qemu-linux
+        path: |
+          qemu/bin/qemu-system-x86_64
+          qemu/bin/qemu-system-aarch64
+  prepare-extdep:
+    needs: [qemu-windows, qemu-linux]
+    runs-on: Ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          pip install edk2-pytool-extensions
+      - name: Download Windows Qemu Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: qemu-windows
+          path: windows
+      - name: Download Linux Qemu Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: qemu-linux
+          path: linux
+      - name: Stage Ext-Dep
+        run: |
+          mkdir -p temp
+          mv windows/ temp/Windows/
+          mv linux/ temp/Linux/
+          ls temp/Windows
+          ls temp/Linux
+          chmod a+x temp/Linux/*
+      - name: Package Ext-Dep
+        run: |
+          zip -r qemu-1.0.0.zip temp/*
+          tar -czf qemu-1.0.0.tar.gz temp/*
+      
+      - name: Upload Ext-Dep
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-extdep
+          path: |
+            qemu-1.0.0.zip
+            qemu-1.0.0.tar.gz
