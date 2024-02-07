@@ -80,6 +80,7 @@ jobs:
         QEMU_URL: "https://gitlab.com/qemu-project/qemu.git"
         DEBIAN_FRONTEND: "noninteractive"
       run: |
+        find . -name vgabios-cirrus.bin
         git clone $QEMU_URL --branch $QEMU_VERSION --depth 1 qemu
         cd qemu
         mkdir bin
