@@ -138,6 +138,7 @@ jobs:
             qemu-*.zip
             qemu-*.gz
       - name: Upload Ext-Dep (Release)
+        if: github.event_name == 'release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
