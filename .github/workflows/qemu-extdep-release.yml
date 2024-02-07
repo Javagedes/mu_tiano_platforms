@@ -74,7 +74,6 @@ jobs:
           mtools \
           ninja-build \
           tar
-      
     - name: Compile Qemu ${{ steps.qemu-version.outputs.QEMU_VERSION }}
       env:
         QEMU_VERSION: ${{ steps.qemu-version.outputs.QEMU_VERSION }}
@@ -86,14 +85,19 @@ jobs:
         mkdir bin
         cd bin
         ./../configure --target-list=x86_64-softmmu,aarch64-softmmu --enable-gtk
-        sudo make -j $(nproc)  
+        sudo make -j $(nproc)
+    - name: Stage Qemu Binaries
+      run: |
+        mkdir -p temp
+        mkdir -p temp/share
+        cp qemu/bin/qemu-system-x86_64 qemu/bin/qemu-system-aarch64 temp
+        cp qemu/bin/share/kvmvapic.bin qemu/bin/share/vgabios-cirrus.bin temp/share
     - name: Upload Qemu Artifact
       uses: actions/upload-artifact@v4
       with:
         name: qemu-linux
         path: |
-          qemu/bin/qemu-system-x86_64
-          qemu/bin/qemu-system-aarch64
+          temp/*
   
   prepare-extdep:
     name: Prepare and Upload Qemu External Dependency
