@@ -1,4 +1,4 @@
-name: Publish Qemu Ext-Dep
+name: Publish Qemu External Dependency
 
 on:
   workflow_dispatch:
@@ -10,6 +10,7 @@ env:
 
 jobs:
   qemu-windows:
+    name: Build Qemu for Windows
     runs-on: windows-latest
   
     steps:
@@ -26,15 +27,24 @@ jobs:
         QEMU_VERSION: ${{ steps.qemu-version.outputs.QEMU_VERSION }}
       run: |
         choco install qemu --version=$env:QEMU_VERSION
+    - name: Stage Qemu Binaries
+      run: |
+        mkdir temp
+        mkdir temp\share
+        cp "C:\Program Files\qemu\qemu-system-x86_64.exe" temp
+        cp "C:\Program Files\qemu\qemu-system-aarch64.exe" temp
+        cp "C:\Program Files\qemu\share\kvmvapic.bin" temp\share
+        cp "C:\Program Files\qemu\share\vgabios-cirrus.bin temp\share
     - name: Upload Qemu Artifact
       uses: actions/upload-artifact@v4
       with:
         name: qemu-windows
         path: |
-          C:\Program Files\qemu\qemu-system-x86_64.exe
-          C:\Program Files\qemu\qemu-system-aarch64.exe
+          temp\*
         if-no-files-found: error
+
   qemu-linux:
+    name: Build Qemu for Linux
     runs-on: ubuntu-latest
 
     steps:
@@ -84,7 +94,9 @@ jobs:
         path: |
           qemu/bin/qemu-system-x86_64
           qemu/bin/qemu-system-aarch64
+  
   prepare-extdep:
+    name: Prepare and Upload Qemu External Dependency
     needs: [qemu-windows, qemu-linux]
     runs-on: Ubuntu-latest
     
