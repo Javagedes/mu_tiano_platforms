@@ -104,14 +104,6 @@ jobs:
         with:
           name: qemu-linux
           path: linux
-      - name: Set Release version
-        id: set-version
-        run: |
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            echo "RELEASE_VERSION=${{github.event.release.tag_name}}" >> $GITHUB_ENV
-          else
-            echo "RELEASE_VERSION=0.0.0" >> $GITHUB_ENV
-          fi
       - name: Stage Ext-Dep
         run: |
           mkdir -p qemu
@@ -125,11 +117,17 @@ jobs:
           zip -r qemu-${{github.event.release.tag_name}}.zip qemu/*
           tar -czf qemu-${{github.event.release.tag_name}}.tar.gz qemu/*
 
-      - name: Upload Ext-Dep
+      - name: Upload Ext-Dep (Artifact)
         uses: actions/upload-artifact@v4
         if: github.event_name == 'workflow_dispatch'
         with:
-          name: qemu-extdep
+          name: qemu-extdep-binaries
           path: |
             qemu-*.zip
             qemu-*.gz
+      - name: Upload Ext-Dep (Release)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} qemu-*.zip
+          gh release upload ${{ github.event.release.tag_name }} qemu-*.tar.gz 
