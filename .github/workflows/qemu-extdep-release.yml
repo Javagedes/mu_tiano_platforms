@@ -86,7 +86,7 @@ jobs:
         cd bin
         ./../configure --target-list=x86_64-softmmu,aarch64-softmmu --enable-gtk
         sudo make -j $(nproc)
-        ls
+        find . -name vgabios-cirrus.bin
     - name: Stage Qemu Binaries
       run: |
         mkdir -p temp
