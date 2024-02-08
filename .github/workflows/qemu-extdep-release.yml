@@ -89,7 +89,7 @@ jobs:
         sudo make -j $(nproc)
     - name: Stage Qemu Binaries
       run: |
-        mkdir -p temp/qemu-bundle/usr/local/share/
+        mkdir -p temp/share
         cp qemu/bin/qemu-system-x86_64 qemu/bin/qemu-system-aarch64 temp
         cp qemu/bin/qemu-bundle/usr/local/share/qemu/vgabios-cirrus.bin temp/share
         cp qemu/bin/qemu-bundle/usr/local/share/qemu/vgabios-stdvga.bin temp/share
