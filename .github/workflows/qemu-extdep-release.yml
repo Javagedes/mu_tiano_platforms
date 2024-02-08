@@ -91,9 +91,9 @@ jobs:
       run: |
         mkdir -p temp/qemu-bundle/usr/local/share/
         cp qemu/bin/qemu-system-x86_64 qemu/bin/qemu-system-aarch64 temp
-        cp qemu/bin/qemu-bundle/usr/local/share/qemu/vgabios-cirrus.bin temp/qemu-bundle/usr/local/share
-        cp qemu/bin/qemu-bundle/usr/local/share/qemu/vgabios-stdvga.bin temp/qemu-bundle/usr/local/share
-        cp qemu/bin/qemu-bundle/usr/local/share/qemu/kvmvapic.bin temp/qemu-bundle/usr/local/share
+        cp qemu/bin/qemu-bundle/usr/local/share/qemu/vgabios-cirrus.bin temp/share
+        cp qemu/bin/qemu-bundle/usr/local/share/qemu/vgabios-stdvga.bin temp/share
+        cp qemu/bin/qemu-bundle/usr/local/share/qemu/kvmvapic.bin temp/share
     - name: Upload Qemu Artifact
       uses: actions/upload-artifact@v4
       with:
