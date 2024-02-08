@@ -36,12 +36,7 @@ jobs:
         cp "C:\Program Files\qemu\share\kvmvapic.bin" temp\share
         cp "C:\Program Files\qemu\share\vgabios-cirrus.bin" temp\share
         cp "C:\Program Files\qemu\share\vgabios-stdvga.bin" temp\share
-    - task: CopyFiles@2
-      inputs:
-        SourceFolder: 'C:\Program Files\qemu\'
-        Contents: '**/*.dll'
-        TargetFolder: 'temp'
-        CleanTargetFolder: false
+        robocopy "C:\Program Files\qemu" "temp" *.dll
     - name: Upload Qemu Artifact
       uses: actions/upload-artifact@v4
       with:
