@@ -36,7 +36,7 @@ jobs:
         cp "C:\Program Files\qemu\share\kvmvapic.bin" temp\share
         cp "C:\Program Files\qemu\share\vgabios-cirrus.bin" temp\share
         cp "C:\Program Files\qemu\share\vgabios-stdvga.bin" temp\share
-        (robocopy "C:\Program Files\qemu" "temp" *.dll) ^& IF %ERRORLEVEL% LEQ 1 exit 0
+        Get-ChildItem -Path "C:\Program Files\qemu" -Filter *.dll | Move-Item -Destination "temp"
         
     - name: Upload Qemu Artifact
       uses: actions/upload-artifact@v4
