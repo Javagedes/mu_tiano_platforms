@@ -4,9 +4,15 @@ on:
   workflow_dispatch:
   release:
     types: [published]
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-qemu-bin.yml
+      - .github/publish-qemu-config.yml
 
 env:
-  QEMU_VERSION_FILE: .github/workflows/QemuVersion.json
+  QEMU_VERSION_FILE: .github/publish-qemu-config.yml
 
 jobs:
   qemu-windows:
@@ -102,12 +108,15 @@ jobs:
         name: qemu-linux
         path: |
           temp/*
+        if-no-files-found: error
   
   prepare-extdep:
     name: Prepare and Upload Qemu External Dependency
     needs: [qemu-windows, qemu-linux]
     runs-on: Ubuntu-latest
-    
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -139,7 +148,7 @@ jobs:
 
       - name: Upload Ext-Dep (Artifact)
         uses: actions/upload-artifact@v4
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         with:
           name: qemu-extdep-binaries
           path: |
