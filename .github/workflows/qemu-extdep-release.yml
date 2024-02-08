@@ -31,12 +31,12 @@ jobs:
       run: |
         mkdir temp
         mkdir temp\share
-        robocopy "C:\Program Files\qemu" "temp" *.dll
         cp "C:\Program Files\qemu\qemu-system-x86_64.exe" temp
         cp "C:\Program Files\qemu\qemu-system-aarch64.exe" temp
         cp "C:\Program Files\qemu\share\kvmvapic.bin" temp\share
         cp "C:\Program Files\qemu\share\vgabios-cirrus.bin" temp\share
         cp "C:\Program Files\qemu\share\vgabios-stdvga.bin" temp\share
+        (robocopy "C:\Program Files\qemu" "temp" *.dll) ^& IF %ERRORLEVEL% LEQ 1 exit 0
         
     - name: Upload Qemu Artifact
       uses: actions/upload-artifact@v4
