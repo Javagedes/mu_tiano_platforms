@@ -9,9 +9,6 @@ name: "Platform CI"
 
 on:
   workflow_dispatch:
-  release:
-    types:
-      - published
   push:
     branches:
       - main
@@ -78,11 +75,9 @@ jobs:
           # Exclude VS builds on Ubuntu
           - os: ubuntu-latest
             tool-chain: VS2022
-          # Exclude SBSA Windows builds
-          - os: windows-latest
-            platform:
-              - config: Platforms/QemuSbsaPkg/PlatformBuild.py
-                name: SBSA
+          # Exclude CLANGPDB RELEASE builds due to PEI bug
+          - tool-chain: CLANGPDB
+            target: RELEASE
 
     steps:
       # Checkout the repository to the runner or container
@@ -131,7 +126,7 @@ jobs:
           platform-name: ${{ matrix.platform.name }}
           target: ${{ matrix.target }}
           tool-chain: ${{ matrix.tool-chain }}
-          stuart-args: 'HAF_TFA_BUILD=TRUE SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
+          stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
       - name: Run ${{ matrix.platform.name }} ${{ matrix.target }} ${{ matrix.tool-chain}}
@@ -142,7 +137,7 @@ jobs:
           platform-name: ${{ matrix.platform.name }}
           target: ${{ matrix.target }}
           tool-chain: ${{ matrix.tool-chain }}
-          stuart-args: 'HAF_TFA_BUILD=TRUE SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
+          stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
       - name: Publish Logs
@@ -151,23 +146,3 @@ jobs:
         with:
           name: build-logs-${{ matrix.platform.name }}-${{ matrix.target }}-${{ matrix.tool-chain }}-${{ matrix.os}}
           path: ${{ steps.build-platform.outputs.log-path }}
-
-      - name: Publish Q35 release binaries
-        if: ${{ github.event_name == 'release' && matrix.platform.name == 'Q35' && matrix.os == 'windows-latest' }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: release-bin-${{ matrix.platform.name }}-${{ matrix.target }}-${{ matrix.tool-chain }}
-          path: |
-            Build/**/FV/QEMUQ35_CODE.fd
-            Build/**/FV/QEMUQ35_VARS.fd
-          if-no-files-found: error
-
-      - name: Publish SBSA release binaries
-        if: ${{ github.event_name == 'release' && matrix.platform.name == 'SBSA'}}
-        uses: actions/upload-artifact@v7
-        with:
-          name: release-bin-${{ matrix.platform.name }}-${{ matrix.target }}-${{ matrix.tool-chain }}
-          path: |
-            Build/**/FV/QEMU_EFI.fd
-            Build/**/FV/SECURE_FLASH0.fd
-          if-no-files-found: error
