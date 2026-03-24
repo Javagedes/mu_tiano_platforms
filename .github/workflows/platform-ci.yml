@@ -68,6 +68,10 @@ jobs:
           # Exclude SBSA CLANG builds due to ldr assembly issue
           - tool-chain: CLANGPDB
             platform: SBSA
+          # Exclude SBSA VS2022 builds because ArmSMdePkg\Library\ArmSvcLib
+          # cannot be compiled on non GCC builds
+          - tool-chain: VS2022
+            platform: SBSA
 
     steps:
       # Checkout the repository to the runner or container
