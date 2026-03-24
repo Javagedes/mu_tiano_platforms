@@ -11,12 +11,6 @@
 on:
   workflow_call:
     outputs:
-      windows-toolchain:
-        description: 'Tool chain tag to use for Windows builds'
-        value: ${{ jobs.vars.outputs.windows-toolchain }}
-      linux-toolchain:
-        description: 'Tool chain tag to use for Linux builds'
-        value: ${{ jobs.vars.outputs.linux-toolchain }}
       container-image:
         description: 'Container image to use for Linux builds'
         value: ${{ jobs.vars.outputs.container-image }}
@@ -28,8 +22,6 @@ on:
         value: ${{ jobs.vars.outputs.qemu-core-count }}
 
 env:
-  WINDOWS_TOOLCHAIN: 'CLANGPDB'
-  LINUX_TOOLCHAIN: 'CLANGPDB'
   CONTAINER_IMAGE: 'ghcr.io/microsoft/mu_devops/ubuntu-24-test:latest'
   PYTHON_VERSION: '3.12'
   QEMU_CORE_COUNT: '2'
@@ -40,8 +32,6 @@ jobs:
 
     runs-on: ubuntu-latest
     outputs:
-      windows-toolchain: ${{ steps.set-vars.outputs.windows-toolchain }}
-      linux-toolchain: ${{ steps.set-vars.outputs.linux-toolchain }}
       container-image: ${{ steps.set-vars.outputs.container-image }}
       python-version: ${{ steps.set-vars.outputs.python-version }}
       qemu-core-count: ${{ steps.set-vars.outputs.qemu-core-count }}
@@ -51,8 +41,6 @@ jobs:
       id: set-vars
       shell: bash
       run: |
-        echo "windows-toolchain=${WINDOWS_TOOLCHAIN}" >> $GITHUB_OUTPUT
-        echo "linux-toolchain=${LINUX_TOOLCHAIN}" >> $GITHUB_OUTPUT
         echo "container-image=${CONTAINER_IMAGE}" >> $GITHUB_OUTPUT
         echo "python-version=${PYTHON_VERSION}" >> $GITHUB_OUTPUT
         echo "qemu-core-count=${QEMU_CORE_COUNT}" >> $GITHUB_OUTPUT
