@@ -64,9 +64,9 @@ jobs:
           # Exclude non-container builds on Ubuntu
           - os: 'ubuntu-latest'
             container: ''
-          # Exclude GCC builds on Windows
+          # Exclude GCC5 builds on Windows
           - os: 'windows-latest'
-            tool-chain: 'GCC'
+            tool-chain: 'GCC5'
           # Exclude VS builds on Ubuntu
           - os: 'ubuntu-latest'
             tool-chain: 'VS2022'
