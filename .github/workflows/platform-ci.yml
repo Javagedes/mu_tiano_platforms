@@ -62,15 +62,17 @@ jobs:
           # Exclude VS builds on Ubuntu
           - os: ubuntu-latest
             tool-chain: VS2022
+          # Exclude VS SBSA builds
+          - platform: SBSA
+            tool-chain: VS2022
+          ##############################
+          # Temporary Filters for Bugs #
+          ##############################
           # Exclude CLANGPDB RELEASE builds due to PEI bug
           - tool-chain: CLANGPDB
             target: RELEASE
           # Exclude SBSA CLANG builds due to ldr assembly issue
           - tool-chain: CLANGPDB
-            platform: SBSA
-          # Exclude SBSA VS2022 builds because ArmSMdePkg\Library\ArmSvcLib
-          # cannot be compiled on non GCC builds
-          - tool-chain: VS2022
             platform: SBSA
 
     steps:
