@@ -26,7 +26,7 @@ jobs:
 
   # Builds the platform(s) in this repository as defined by the matrix.
   build:
-    name: Build ${{ matrix.platform.name }} ${{ matrix.target }} ${{ matrix.tool-chain }} (${{ matrix.os }})
+    name: Build ${{ matrix.platform }} ${{ matrix.target }} ${{ matrix.tool-chain }} (${{ matrix.os }})
 
     needs: 
       - vars
@@ -57,10 +57,8 @@ jobs:
           - ${{ needs.vars.outputs.container-image}}
           - ''
         platform:
-          - config: Platforms/QemuQ35Pkg/PlatformBuild.py
-            name: Q35
-          - config: Platforms/QemuSbsaPkg/PlatformBuild.py
-            name: SBSA
+          - Q35
+          - SBSA
 
         exclude:
           # Exclude container builds on Windows
@@ -83,6 +81,26 @@ jobs:
       # Checkout the repository to the runner or container
       - name: Checkout repository
         uses: actions/checkout@v6
+      
+      - name: Set platform config path
+        id: set-config
+        shell: bash
+        run: |
+          case "${{ matrix.platform }}" in
+            Q35)
+              CONFIG_PATH="Platforms/QemuQ35Pkg/PlatformBuild.py"
+              ;;
+            SBSA)
+              CONFIG_PATH="Platforms/QemuSbsaPkg/PlatformBuild.py"
+              ;;
+            *)
+              echo "Unknown platform: ${{ matrix.platform }}"
+              exit 1
+              ;;
+          esac
+
+          echo "path=$CONFIG_PATH" >> "$GITHUB_OUTPUT"
+          
       
       # $GITHUB_WORKSPACE is mu_tiano_platforms/mu_tiano_platforms, which results in paths
       # for certain drivers being too long and resulting in build failures.
@@ -117,24 +135,24 @@ jobs:
         run: pip install -r pip-requirements.txt
 
       # Run the build-platform action, which calls stuart_setup, stuart_update, and stuart_build
-      - name: Prepare and Build ${{ matrix.platform.name }} ${{ matrix.target }} ${{ matrix.tool-chain}}
+      - name: Prepare and Build ${{ matrix.platform }} ${{ matrix.target }} ${{ matrix.tool-chain}}
         id: build-platform
         uses: ./.github/actions/build-platform
         with:
           command: 'build'
-          platform-config: ${{ matrix.platform.config }}
-          platform-name: ${{ matrix.platform.name }}
+          platform-config: ${{ steps.set-config.outputs.path }}
+          platform-name: ${{ matrix.platform }}
           target: ${{ matrix.target }}
           tool-chain: ${{ matrix.tool-chain }}
           stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
-      - name: Run ${{ matrix.platform.name }} ${{ matrix.target }} ${{ matrix.tool-chain}}
+      - name: Run ${{ matrix.platform }} ${{ matrix.target }} ${{ matrix.tool-chain}}
         uses: ./.github/actions/build-platform
         with:
           command: 'flash'
-          platform-config: ${{ matrix.platform.config }}
-          platform-name: ${{ matrix.platform.name }}
+          platform-config: ${{ steps.set-config.outputs.path }}
+          platform-name: ${{ matrix.platform }}
           target: ${{ matrix.target }}
           tool-chain: ${{ matrix.tool-chain }}
           stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
@@ -144,5 +162,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: build-logs-${{ matrix.platform.name }}-${{ matrix.target }}-${{ matrix.tool-chain }}-${{ matrix.os}}
+          name: build-logs-${{ matrix.platform }}-${{ matrix.target }}-${{ matrix.tool-chain }}-${{ matrix.os}}
           path: ${{ steps.build-platform.outputs.log-path }}
