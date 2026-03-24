@@ -80,7 +80,9 @@ jobs:
             tool-chain: VS2022
           # Exclude SBSA Windows builds
           - os: windows-latest
-            platform.name: SBSA
+            platform:
+              - config: Platforms/QemuSbsaPkg/PlatformBuild.py
+                name: SBSA
 
     steps:
       # Checkout the repository to the runner or container
