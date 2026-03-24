@@ -51,7 +51,7 @@ jobs:
         os: ['windows-latest', 'ubuntu-latest']
         container: ['', '${{ needs.vars.outputs.container-image }}']
 
-        include:
+        config:
           - config: 'Platforms/QemuQ35Pkg/PlatformBuild.py'
             platform: 'Q35'
           - config: 'Platforms/QemuSbsaPkg/PlatformBuild.py'
