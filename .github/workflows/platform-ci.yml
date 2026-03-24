@@ -19,9 +19,6 @@ on:
     branches:
       - main
 
-env:
-  DXE_READINESS_TOOL_PATH: QemuPkg/Binaries/READINESS.QEMU_extdep
-
 jobs:
 
   # A job to produce the environment constants for this repository, so that the build job can
@@ -36,7 +33,6 @@ jobs:
 
     needs: 
       - vars
-      - build-tfa
 
     runs-on: ${{ matrix.os }}
 
@@ -49,23 +45,28 @@ jobs:
       # This setting prevents the cancellation of other jobs when one job fails.
       fail-fast: false
       matrix:
+        target: ['DEBUG', 'RELEASE']
+        tool-chain: ['CLANGPDB']
+        os: ['windows-latest']
+        container: ['', '${{ needs.vars.outputs.container-image }}']
+
         include:
           - config: 'Platforms/QemuQ35Pkg/PlatformBuild.py'
-            target: 'DEBUG'
-            tool-chain: ${{ needs.vars.outputs.windows-toolchain }}
             platform: 'Q35'
-            os: 'windows-latest'
+        exclude:
+          - os: 'windows-latest'
+            container: '${{ needs.vars.outputs.container-image }}'
           # - config: 'Platforms/QemuQ35Pkg/PlatformBuild.py'
           #   target: 'RELEASE'
           #   tool-chain: ${{ needs.vars.outputs.windows-toolchain }}
           #   platform: 'Q35'
           #   os: 'windows-latest'
-          - config: 'Platforms/QemuQ35Pkg/PlatformBuild.py'
-            target: 'DEBUG'
-            tool-chain: ${{ needs.vars.outputs.linux-toolchain }}
-            platform: 'Q35'
-            os: 'ubuntu-latest'
-            container: ${{ needs.vars.outputs.container-image }}
+          # - config: 'Platforms/QemuQ35Pkg/PlatformBuild.py'
+          #   target: 'DEBUG'
+          #   tool-chain: ${{ needs.vars.outputs.linux-toolchain }}
+          #   platform: 'Q35'
+          #   os: 'ubuntu-latest'
+          #   container: ${{ needs.vars.outputs.container-image }}
           # - config: 'Platforms/QemuQ35Pkg/PlatformBuild.py'
           #   target: 'RELEASE'
           #   tool-chain: ${{ needs.vars.outputs.linux-toolchain }}
@@ -90,6 +91,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
       
+      # $GITHUB_WORKSPACE is mu_tiano_platforms/mu_tiano_platforms, which results in paths
+      # for certain drivers being too long and resulting in build failures.
       - name: Create short path alias
         id: short-path
         if: runner.os == 'Windows'
@@ -97,11 +100,6 @@ jobs:
         run: |
           subst S: "$(cygpath -w '${{ github.workspace }}')"
           echo "short-path=S:" >> $GITHUB_OUTPUT
-
-      - name: echo GITHUB_WORKSPACE
-        run: |
-          echo "GITHUB_WORKSPACE=${{ github.workspace }}"
-          echo "SHORT_PATH=${{ steps.short-path.outputs.short-path }}"
 
       # Configure git for use in the container. Specifically needed for the FFA builds
       - name: Container Configuration
@@ -135,7 +133,7 @@ jobs:
           platform-name: ${{ matrix.platform }}
           target: ${{ matrix.target }}
           tool-chain: ${{ matrix.tool-chain }}
-          stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
+          stuart-args: 'HAF_TFA_BUILD=TRUE SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
       - name: Run ${{ matrix.platform }} ${{ matrix.target }} ${{ matrix.tool-chain}}
@@ -146,7 +144,7 @@ jobs:
           platform-name: ${{ matrix.platform }}
           target: ${{ matrix.target }}
           tool-chain: ${{ matrix.tool-chain }}
-          stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
+          stuart-args: 'HAF_TFA_BUILD=TRUE SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
       - name: Publish Logs
@@ -175,62 +173,3 @@ jobs:
             Build/**/FV/QEMU_EFI.fd
             Build/**/FV/SECURE_FLASH0.fd
           if-no-files-found: error
-
-  build-tfa:
-    name: Build TFA
-
-    needs: vars
-
-    runs-on: ubuntu-latest
-
-    container:
-      image: ${{ needs.vars.outputs.container-image }}
-      options: --security-opt seccomp=unconfined
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      # Configure git for use in the container. Specifically needed for the FFA builds
-      - name: Container Configuration
-        run: |
-          git config --global --add safe.directory '*'
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-
-      # Install the pip dependencies needed to run stuart for the platform(s)
-      - name: Install dependencies
-        run: pip install -r pip-requirements.txt
-      
-      # Run the build-platform action, which calls stuart_setup, stuart_update, and stuart_build
-      - name: Build TFA
-        uses: ./.github/actions/build-platform
-        with:
-          command: 'build'
-          platform-config: Platforms/QemuSbsaPkg/PlatformBuild.py
-          platform-name: SBSA
-          target: DEBUG
-          tool-chain: CLANGPDB
-          stuart-args: HAF_TFA_BUILD=TRUE
-
-      - name: Install archive tools
-        run: |
-          apt-get update -y
-          apt-get install -y zip tar gh
-
-      - name: Create per-target archives
-        shell: bash
-        run: |
-          set -euo pipefail
-          BIN_DIR="Build/QemuSbsaPkg/DEBUG_GCC5/HafTfaBins"
-          echo "Packaging binaries from ${BIN_DIR}"
-          if [ ! -d "$BIN_DIR" ]; then
-            echo "Binary directory not found: $BIN_DIR" >&2
-            exit 1
-          fi
-          ZIP_PATH="${RUNNER_TEMP}/haf-tfa-firmware-${{ github.event.release.tag_name }}.zip"
-          TAR_PATH="${RUNNER_TEMP}/haf-tfa-firmware-${{ github.event.release.tag_name }}.tar.gz"
-          (cd "$BIN_DIR" && zip -r "$ZIP_PATH" .)
-          (cd "$BIN_DIR" && tar -czf "$TAR_PATH" .)
-          echo "Created archives:"
-          ls -lh "$ZIP_PATH" "$TAR_PATH"
