@@ -43,7 +43,7 @@ jobs:
       fail-fast: false
 
       matrix:
-        target: [DEBUG, RELEASE]
+        target: ${{fromJson('["DEBUG", "RELEASE"]')}} 
         tool-chain: [CLANGPDB, VS2022, GCC5]
         os: [windows-latest, ubuntu-latest]
         container: ['', '${{ needs.vars.outputs.container-image}}']
