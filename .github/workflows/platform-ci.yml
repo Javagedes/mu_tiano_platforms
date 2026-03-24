@@ -65,22 +65,25 @@ jobs:
           - file: Platforms/QemuSbsaPkg/PlatformBuild.py
             platform: SBSA
 
-        exclude:
-          # Exclude container builds on Windows
-          - os: windows-latest
-            container: ${{ needs.vars.outputs.container-image }}
-          # Exclude non-container builds on Ubuntu
+        include:
           - os: ubuntu-latest
+            container: ${{ needs.vars.outputs.container-image }}
+          - os: windows-latest
             container: ''
+
+        exclude:
+          # # Exclude container builds on Windows
+          # - os: windows-latest
+          #   container: ${{ needs.vars.outputs.container-image }}
+          # # Exclude non-container builds on Ubuntu
+          # - os: ubuntu-latest
+          #   container: ''
           # Exclude GCC5 builds on Windows
           - os: windows-latest
             tool-chain: GCC5
           # Exclude VS builds on Ubuntu
           - os: ubuntu-latest
             tool-chain: VS2022
-          # Exclude SBSA builds on Windows
-          - os: windows-latest
-            config.platform: SBSA
 
     steps:
       # Checkout the repository to the runner or container
