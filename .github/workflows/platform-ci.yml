@@ -47,7 +47,7 @@ jobs:
 
       matrix:
         target: ['DEBUG', 'RELEASE']
-        tool-chain: ['CLANGPDB', 'GCC', VS2022]
+        tool-chain: ['CLANGPDB', 'GCC5', VS2022]
         os: ['windows-latest', 'ubuntu-latest']
         container: ['', '${{ needs.vars.outputs.container-image }}']
 
