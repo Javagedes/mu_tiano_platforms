@@ -46,8 +46,8 @@ jobs:
       fail-fast: false
       matrix:
         target: ['DEBUG', 'RELEASE']
-        tool-chain: ['CLANGPDB']
-        os: ['windows-latest']
+        tool-chain: ['CLANGPDB', 'GCC', VS2022]
+        os: ['windows-latest', 'ubuntu-latest']
         container: ['', '${{ needs.vars.outputs.container-image }}']
 
         include:
@@ -56,6 +56,10 @@ jobs:
         exclude:
           - os: 'windows-latest'
             container: '${{ needs.vars.outputs.container-image }}'
+          - os: 'windows-latest'
+            tool-chain: 'GCC'
+          - os: 'ubuntu-latest'
+            tool-chain: 'VS2022'
           # - config: 'Platforms/QemuQ35Pkg/PlatformBuild.py'
           #   target: 'RELEASE'
           #   tool-chain: ${{ needs.vars.outputs.windows-toolchain }}
