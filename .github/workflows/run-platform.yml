@@ -1,0 +1,136 @@
+# A reusable workflow to build and run a single platform configuration.
+#
+##
+# Copyright (c) Microsoft Corporation.
+#
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+name: "Build and Run Platform"
+
+on:
+  workflow_call:
+    inputs:
+      platform-config:
+        description: 'Path to the platform build configuration file'
+        required: true
+        type: string
+      platform-name:
+        description: 'Short name of the platform (e.g. Q35, SBSA)'
+        required: true
+        type: string
+      architecture:
+        description: 'Architecture to build (e.g. IA32,X64). Empty string for default.'
+        required: false
+        type: string
+        default: ''
+      extra-stuart-args:
+        description: 'Extra arguments to pass to stuart_build (e.g. SHUTDOWN_AFTER_RUN=TRUE)'
+        required: false
+        type: string
+        default: ''
+      target:
+        description: 'Build target (e.g. DEBUG, RELEASE)'
+        required: true
+        type: string
+      tool-chain:
+        description: 'Toolchain to use (e.g. CLANGPDB, VS2022, GCC5)'
+        required: true
+        type: string
+      os:
+        description: 'Runner OS (e.g. windows-latest, ubuntu-latest)'
+        required: true
+        type: string
+      container-image:
+        description: 'Container image to use. Empty string for no container.'
+        required: false
+        type: string
+        default: ''
+      python-version:
+        description: 'Version of Python to use when not in a container'
+        required: true
+        type: string
+      qemu-core-count:
+        description: 'Number of CPU cores for QEMU'
+        required: true
+        type: string
+
+jobs:
+
+  build:
+    name: ${{ inputs.platform-name }} ${{ inputs.architecture }} ${{ inputs.target }} ${{ inputs.tool-chain }} (${{ inputs.os }})
+
+    runs-on: ${{ inputs.os }}
+
+    container:
+      image: ${{ inputs.container-image || null }}
+      options: --security-opt seccomp=unconfined
+
+    steps:
+      # Checkout the repository to the runner or container
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # $GITHUB_WORKSPACE is mu_tiano_platforms/mu_tiano_platforms, which results in paths
+      # for certain drivers being too long and resulting in build failures.
+      - name: Create short path alias
+        id: short-path
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          subst S: "$(cygpath -w '${{ github.workspace }}')"
+          echo "short-path=S:" >> $GITHUB_OUTPUT
+
+      # Configure git for use in the container. Specifically needed for the FFA builds
+      - name: Container Configuration
+        if: ${{ inputs.container-image != '' }}
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      # Set the version of Python to use when outside of a container. Otherwise just use what's
+      # in the container.
+      - name: Setup Python ${{ inputs.python-version }}
+        if: ${{ inputs.container-image == '' }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: 'pip'
+          cache-dependency-path: 'pip-requirements.txt'
+
+      # Install the pip dependencies needed to run stuart for the platform(s)
+      - name: Install dependencies
+        run: pip install -r pip-requirements.txt
+
+      # Run the build-platform action, which calls stuart_setup, stuart_update, and stuart_build
+      - name: Prepare and Build ${{ inputs.platform-name }} ${{ inputs.target }} ${{ inputs.tool-chain }}
+        id: build-platform
+        uses: ./.github/actions/build-platform
+        with:
+          command: 'build'
+          platform-config: ${{ inputs.platform-config }}
+          platform-name: ${{ inputs.platform-name }}
+          architecture: ${{ inputs.architecture }}
+          target: ${{ inputs.target }}
+          tool-chain: ${{ inputs.tool-chain }}
+          stuart-args: '${{inputs.extra-stuart-args}} SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ inputs.qemu-core-count }}'
+          working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
+
+      - name: Run ${{ inputs.platform-name }} ${{ inputs.target }} ${{ inputs.tool-chain }}
+        uses: ./.github/actions/build-platform
+        with:
+          command: 'flash'
+          platform-config: ${{ inputs.platform-config }}
+          platform-name: ${{ inputs.platform-name }}
+          architecture: ${{ inputs.architecture }}
+          target: ${{ inputs.target }}
+          tool-chain: ${{ inputs.tool-chain }}
+          stuart-args: '${{inputs.extra-stuart-args}} SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ inputs.qemu-core-count }}'
+          working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
+
+      - name: Publish Logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-logs-${{ inputs.platform-name }}-${{ inputs.architecture }}-${{ inputs.target }}-${{ inputs.tool-chain }}-${{ inputs.os }}
+          path: ${{ steps.build-platform.outputs.log-path }}
