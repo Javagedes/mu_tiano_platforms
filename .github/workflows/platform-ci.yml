@@ -99,6 +99,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
       
+      - name: Download HAF-TFA Build Artifacts
+        if: needs.build-haf-tfa.result == 'success' && matrix.platform == 'SBSA'
+        uses: actions/download-artifact@v7
+        with:
+          name: haf-tfa-firmware
+      
+      - name: Set stuart args
+        id: set-stuart-args
+        shell: bash
+        run: |
+          ARGS="SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}"
+          # If building SBSA and the artifact was downloaded to ${GITHUB_WORKSPACE}/haf-tfa-firmware, then set the HAF_TFA_BINS argument to point to it.
+          if [[ "${{ matrix.platform }}" == "SBSA" && -d "${{ github.workspace }}/haf-tfa-firmware" ]]; then
+            ARGS="${ARGS} HAF_TFA_BINS=${{ github.workspace }}/haf-tfa-firmware"
+          fi
+          echo "args=${ARGS}" >> "$GITHUB_OUTPUT"
+      
       - name: Set platform config path
         id: set-config
         shell: bash
