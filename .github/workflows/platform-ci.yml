@@ -107,6 +107,7 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: haf-tfa-firmware
+          path: haf-tfa-firmware
 
       - name: Display structure of downloaded files
         if: needs.build-haf-tfa.result == 'success' && matrix.platform == 'SBSA'
