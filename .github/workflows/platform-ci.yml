@@ -1,5 +1,22 @@
 # A workflow to build the platform(s) in this repository using certain configurations.
 #
+# This workflow goes down two different paths based on whether HAF TFA needs to be built. This is
+# because HAF TFA can only be built on linux, but the HAF TFA binaries are needed for the windows
+# build. Due to this, if HAF TFA needs to be rebuilt, then the windows build needs to wait for the
+# linux build to finish, so that it can consume it's artifacts.
+#
+# This, the first step is to check if HAF TFA needs to be re-built which is determined by the
+# changed files in the pull request.
+#
+# If HAF TFA does not need to be built, then the `build-linux` and `build-windows` steps will build
+# without the command line argument `HAF_TFA_BUILD=TRUE` and the `build-windows-haf-tfa` step will
+# be skipped.
+#
+# If HAF TFA does need to be built, then the `build-linux` step will be built with the command line
+# argument `HAF_TFA_BUILD=TRUE`, which will not only build HAF TFA, but will also output the HAF
+# TFA artifacts as a build artifact. Then the `build-windows-haf-tfa` step will download the HAF
+# TFA artifacts and use them for its own build.
+#
 ##
 # Copyright (c) Microsoft Corporation.
 #
@@ -37,7 +54,7 @@ jobs:
         shell: bash
         run: |
           # Check changed files for any that would require a HAF TFA build
-          echo "build-haf-tfa=true" >> $GITHUB_OUTPUT
+          echo "build-haf-tfa=false" >> $GITHUB_OUTPUT
 
   
   build-linux:
