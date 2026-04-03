@@ -102,6 +102,7 @@ jobs:
         uses: actions/checkout@v6
       
       - name: Download HAF-TFA Build Artifacts
+        id: download-haf-tfa
         if: needs.build-haf-tfa.result == 'success' && matrix.platform == 'SBSA'
         uses: actions/download-artifact@v7
         with:
@@ -170,7 +171,7 @@ jobs:
           target: ${{ matrix.target }}
           tool-chain: ${{ matrix.tool-chain }}
           stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
-          haf-tfa-bins-dir: ${{ github.workspace }}/haf-tfa-firmware
+          haf-tfa-bins-dir: ${{ steps.download-haf-tfa.outcome == 'success' && format('{0}/haf-tfa-firmware', github.workspace) || '' }}
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
       - name: Run ${{ matrix.platform }} ${{ matrix.target }} ${{ matrix.tool-chain}}
@@ -183,7 +184,7 @@ jobs:
           target: ${{ matrix.target }}
           tool-chain: ${{ matrix.tool-chain }}
           stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
-          haf-tfa-bins-dir: ${{ github.workspace }}/haf-tfa-firmware
+          haf-tfa-bins-dir: ${{ steps.download-haf-tfa.outcome == 'success' && format('{0}/haf-tfa-firmware', github.workspace) || '' }}
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
       - name: Publish Logs
