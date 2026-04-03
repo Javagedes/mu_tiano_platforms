@@ -107,6 +107,13 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: haf-tfa-firmware
+          path: ${{ github.workspace }}/haf-tfa-firmware
+
+      - name: Set HAF-TFA bins directory
+        id: haf-tfa
+        if: steps.download-haf-tfa.outcome == 'success'
+        shell: bash
+        run: echo "bins-dir=${{ github.workspace }}/haf-tfa-firmware" >> $GITHUB_OUTPUT
       
       - name: Set platform config path
         id: set-config
@@ -171,7 +178,7 @@ jobs:
           target: ${{ matrix.target }}
           tool-chain: ${{ matrix.tool-chain }}
           stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
-          haf-tfa-bins-dir: ${{ steps.download-haf-tfa.outcome == 'success' && format('{0}/haf-tfa-firmware', github.workspace) || '' }}
+          haf-tfa-bins-dir: ${{ steps.haf-tfa.outputs.bins-dir }}
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
       - name: Run ${{ matrix.platform }} ${{ matrix.target }} ${{ matrix.tool-chain}}
@@ -184,7 +191,7 @@ jobs:
           target: ${{ matrix.target }}
           tool-chain: ${{ matrix.tool-chain }}
           stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ needs.vars.outputs.qemu-core-count }}'
-          haf-tfa-bins-dir: ${{ steps.download-haf-tfa.outcome == 'success' && format('{0}/haf-tfa-firmware', github.workspace) || '' }}
+          haf-tfa-bins-dir: ${{ steps.haf-tfa.outputs.bins-dir }}
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
       - name: Publish Logs
