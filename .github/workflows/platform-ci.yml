@@ -108,6 +108,8 @@ jobs:
         with:
           name: haf-tfa-firmware
           path: ${{ github.workspace }}/haf-tfa-firmware
+      - name: Display structure of downloaded files
+        run: ls -R ${{ github.workspace }}/haf-tfa-firmware
 
       - name: Set HAF-TFA bins directory
         id: haf-tfa
