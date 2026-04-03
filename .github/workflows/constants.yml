@@ -28,7 +28,7 @@ env:
   CONTAINER_IMAGE: 'ghcr.io/microsoft/mu_devops/ubuntu-24-test:latest'
   PYTHON_VERSION: '3.12'
   QEMU_CORE_COUNT: '2'
-  BUILD_HAF_TFA: 'true'
+  BUILD_HAF_TFA: 'false'
 
 jobs:
   vars:
