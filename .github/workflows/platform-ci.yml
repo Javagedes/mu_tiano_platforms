@@ -24,48 +24,26 @@ jobs:
     name: Get Repository Constants
     uses: ./.github/workflows/constants.yml
   
-  build-windows:
-    name: Windows ${{ matrix.platform }} ${{ matrix.architecture }} ${{ matrix.target }} ${{ matrix.tool-chain }}
+  check-haf-tfa-build:
+    name: Check if HAF TFA needs to be built
+    runs-on: ubuntu-latest
 
-    needs: vars
+    outputs:
+      build-haf-tfa: ${{ steps.check.outputs.build-haf-tfa }}
 
-    strategy:
-      fail-fast: false
+    steps:
+      - name: Check if HAF TFA needs to be build
+        id: check
+        shell: bash
+        run: |
+          # Check changed files for any that would require a HAF TFA build
+          echo "build-haf-tfa=true" >> $GITHUB_OUTPUT
 
-      matrix:
-        target: [DEBUG, RELEASE]
-        tool-chain: [CLANGPDB, VS2022]
-        platform: [Q35, SBSA]
-        architecture: ['', 'IA32,X64']
-        exclude:
-          # Exclude SBSA IA32,X64 builds since they are not supported
-          - platform: SBSA
-            architecture: "IA32,X64"
-          ##############################
-          # Temporary Filters for Bugs #
-          ##############################
-          # Exclude CLANGPDB RELEASE builds due to PEI bug
-          - tool-chain: CLANGPDB
-            target: RELEASE
-          # Exclude SBSA CLANG builds due to ldr assembly issue
-          - tool-chain: CLANGPDB
-            platform: SBSA
-    
-    uses: ./.github/workflows/run-platform.yml
-    with:
-      platform-config: ${{ matrix.platform == 'Q35' && 'Platforms/QemuQ35Pkg/PlatformBuild.py' || 'Platforms/QemuSbsaPkg/PlatformBuild.py' }}
-      platform-name: ${{ matrix.platform }}
-      architecture: ${{ matrix.architecture }}
-      target: ${{ matrix.target }}
-      tool-chain: ${{ matrix.tool-chain }}
-      os: windows-latest
-      python-version: ${{ needs.vars.outputs.python-version }}
-      qemu-core-count: ${{ needs.vars.outputs.qemu-core-count }}
   
-  ubuntu-latest:
+  build-linux:
     name: Ubuntu ${{ matrix.platform }} ${{ matrix.architecture }} ${{ matrix.target }} ${{ matrix.tool-chain }}
 
-    needs: vars
+    needs: [vars, check-haf-tfa-build]
 
     strategy:
       fail-fast: false
@@ -98,5 +76,98 @@ jobs:
       tool-chain: ${{ matrix.tool-chain }}
       os: ubuntu-latest
       container-image: ${{ needs.vars.outputs.container-image }}
+      python-version: ${{ needs.vars.outputs.python-version }}
+      qemu-core-count: ${{ needs.vars.outputs.qemu-core-count }}
+      extra-stuart-args: ${{ needs.check-haf-tfa-build.outputs.build-haf-tfa == 'true' && 'HAF_TFA_BUILD=TRUE' || '' }}
+
+  # This windows build relies on the bundled HAF TFA extdep, so it is skipped if we need to build HAF TFA.
+  build-windows:
+    name: Windows ${{ matrix.platform }} ${{ matrix.architecture }} ${{ matrix.target }} ${{ matrix.tool-chain }}
+
+    needs: [vars, check-haf-tfa-build]
+
+    if: needs.check-haf-tfa-build.outputs.build-haf-tfa == 'false'
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        target: [DEBUG, RELEASE]
+        tool-chain: [CLANGPDB, VS2022]
+        platform: [Q35, SBSA]
+        architecture: ['', 'IA32,X64']
+        exclude:
+          # Exclude SBSA IA32,X64 builds since they are not supported
+          - platform: SBSA
+            architecture: "IA32,X64"
+          #########################################
+          # Temporary Filters until only CLANGPDB #
+          #########################################
+          - platform: SBSA
+            tool-chain: VS2022
+          ##############################
+          # Temporary Filters for Bugs #
+          ##############################
+          # Exclude CLANGPDB RELEASE builds due to PEI bug
+          - tool-chain: CLANGPDB
+            target: RELEASE
+          # Exclude SBSA CLANG builds due to ldr assembly issue
+          - tool-chain: CLANGPDB
+            platform: SBSA
+    
+    uses: ./.github/workflows/run-platform.yml
+    with:
+      platform-config: ${{ matrix.platform == 'Q35' && 'Platforms/QemuQ35Pkg/PlatformBuild.py' || 'Platforms/QemuSbsaPkg/PlatformBuild.py' }}
+      platform-name: ${{ matrix.platform }}
+      architecture: ${{ matrix.architecture }}
+      target: ${{ matrix.target }}
+      tool-chain: ${{ matrix.tool-chain }}
+      os: windows-latest
+      python-version: ${{ needs.vars.outputs.python-version }}
+      qemu-core-count: ${{ needs.vars.outputs.qemu-core-count }}
+
+  # This windows build relies on the HAF TFA produced by the ubuntu build, but it only runs if we need to build HAF TFA.
+  build-windows-haf-tfa:
+    name: Windows ${{ matrix.platform }} ${{ matrix.architecture }} ${{ matrix.target }} ${{ matrix.tool-chain }}
+
+    needs: [vars, check-haf-tfa-build, build-linux]
+
+    if: needs.check-haf-tfa-build.outputs.build-haf-tfa == 'true'
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        target: [DEBUG, RELEASE]
+        tool-chain: [CLANGPDB, VS2022]
+        platform: [Q35, SBSA]
+        architecture: ['', 'IA32,X64']
+        exclude:
+          # Exclude SBSA IA32,X64 builds since they are not supported
+          - platform: SBSA
+            architecture: "IA32,X64"
+          #########################################
+          # Temporary Filters until only CLANGPDB #
+          #########################################
+          - platform: SBSA
+            tool-chain: VS2022
+          ##############################
+          # Temporary Filters for Bugs #
+          ##############################
+          # Exclude CLANGPDB RELEASE builds due to PEI bug
+          - tool-chain: CLANGPDB
+            target: RELEASE
+          # Exclude SBSA CLANG builds due to ldr assembly issue
+          - tool-chain: CLANGPDB
+            platform: SBSA
+    
+    uses: ./.github/workflows/run-platform.yml
+    with:
+      platform-config: ${{ matrix.platform == 'Q35' && 'Platforms/QemuQ35Pkg/PlatformBuild.py' || 'Platforms/QemuSbsaPkg/PlatformBuild.py' }}
+      platform-name: ${{ matrix.platform }}
+      architecture: ${{ matrix.architecture }}
+      target: ${{ matrix.target }}
+      tool-chain: ${{ matrix.tool-chain }}
+      os: windows-latest
       python-version: ${{ needs.vars.outputs.python-version }}
       qemu-core-count: ${{ needs.vars.outputs.qemu-core-count }}

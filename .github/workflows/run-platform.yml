@@ -23,6 +23,11 @@ on:
         required: false
         type: string
         default: ''
+      extra-stuart-args:
+        description: 'Extra arguments to pass to stuart_build (e.g. SHUTDOWN_AFTER_RUN=TRUE)'
+        required: false
+        type: string
+        default: ''
       target:
         description: 'Build target (e.g. DEBUG, RELEASE)'
         required: true
@@ -108,7 +113,7 @@ jobs:
           architecture: ${{ inputs.architecture }}
           target: ${{ inputs.target }}
           tool-chain: ${{ inputs.tool-chain }}
-          stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ inputs.qemu-core-count }}'
+          stuart-args: '${{inputs.extra-stuart-args}} SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ inputs.qemu-core-count }}'
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
       - name: Run ${{ inputs.platform-name }} ${{ inputs.target }} ${{ inputs.tool-chain }}
@@ -120,7 +125,7 @@ jobs:
           architecture: ${{ inputs.architecture }}
           target: ${{ inputs.target }}
           tool-chain: ${{ inputs.tool-chain }}
-          stuart-args: 'SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ inputs.qemu-core-count }}'
+          stuart-args: '${{inputs.extra-stuart-args}} SHUTDOWN_AFTER_RUN=TRUE FILE_REGEX=*TestApp*.efi RUN_TESTS=TRUE QEMU_HEADLESS=TRUE BLD_*_QEMU_CORE_NUM=${{ inputs.qemu-core-count }}'
           working-directory: ${{ steps.short-path.outputs.short-path || github.workspace }}
 
       - name: Publish Logs
