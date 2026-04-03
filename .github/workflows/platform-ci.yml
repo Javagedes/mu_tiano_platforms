@@ -109,10 +109,6 @@ jobs:
           name: haf-tfa-firmware
           path: haf-tfa-firmware
 
-      - name: Display structure of downloaded files
-        if: needs.build-haf-tfa.result == 'success' && matrix.platform == 'SBSA'
-        run: ls -R ${GITHUB_WORKSPACE}/haf-tfa-firmware
-
       - name: Set HAF-TFA bins directory
         id: haf-tfa
         if: steps.download-haf-tfa.outcome == 'success'
